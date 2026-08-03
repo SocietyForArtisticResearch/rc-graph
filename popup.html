@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>rcGraph</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+        padding: 0;
+        min-width: 360px;
+        background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+        color: #0f172a;
+      }
+
+      .panel {
+        padding: 16px;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      h1 {
+        font-size: 18px;
+        margin: 0;
+      }
+
+      .subtle {
+        margin: 4px 0 0;
+        color: #475569;
+        font-size: 12px;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+
+      .stat {
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(148, 163, 184, 0.24);
+        border-radius: 12px;
+        padding: 10px;
+      }
+
+      .stat strong {
+        display: block;
+        font-size: 18px;
+      }
+
+      .stat span {
+        color: #64748b;
+        font-size: 11px;
+      }
+
+      .section {
+        background: rgba(255, 255, 255, 0.82);
+        border: 1px solid rgba(148, 163, 184, 0.24);
+        border-radius: 16px;
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+
+      .section h2 {
+        font-size: 13px;
+        margin: 0 0 10px;
+      }
+
+      .editor {
+        display: none;
+      }
+
+      .editor[data-open="true"] {
+        display: block;
+      }
+
+      .field {
+        display: grid;
+        gap: 6px;
+        margin-bottom: 10px;
+      }
+
+      .field label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #334155;
+      }
+
+      .field input,
+      .field textarea,
+      .field select {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 9px 10px;
+        font: inherit;
+        background: #fff;
+      }
+
+      .field textarea {
+        min-height: 72px;
+        resize: vertical;
+      }
+
+      .edges {
+        display: grid;
+        gap: 8px;
+        max-height: 190px;
+        overflow: auto;
+      }
+
+      .edge {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 10px;
+        background: #fff;
+      }
+
+      .edge-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+
+      .edge-type {
+        font-weight: 700;
+      }
+
+      .edge-meta {
+        color: #64748b;
+        font-size: 11px;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 180px;
+        box-sizing: border-box;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        padding: 12px;
+        font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+        resize: vertical;
+      }
+
+      .actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      button {
+        border: 0;
+        border-radius: 999px;
+        padding: 9px 14px;
+        cursor: pointer;
+        font: inherit;
+      }
+
+      .primary {
+        background: #0b74ff;
+        color: white;
+      }
+
+      .secondary {
+        background: #e2e8f0;
+        color: #0f172a;
+      }
+
+      .empty {
+        color: #64748b;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="panel">
+      <div class="header">
+        <div>
+          <h1>rcGraph</h1>
+          <p class="subtle">Review saved annotations and export Cypher.</p>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><strong id="node-count">0</strong><span>nodes</span></div>
+        <div class="stat"><strong id="edge-count">0</strong><span>edges</span></div>
+        <div class="stat"><strong id="pending-count">0</strong><span>pending</span></div>
+      </div>
+
+      <div class="section">
+        <h2>Stored relationships</h2>
+        <div id="edge-list" class="edges"></div>
+      </div>
+
+      <div class="section editor" id="edge-editor" data-open="false">
+        <h2>Edit relationship</h2>
+        <div class="field">
+          <label for="editor-edge-id">Edge ID</label>
+          <input id="editor-edge-id" type="text" readonly />
+        </div>
+        <div class="field">
+          <label for="editor-source-url">Source tool URL</label>
+          <input id="editor-source-url" type="text" readonly />
+        </div>
+        <div class="field">
+          <label for="editor-target-url">Target tool URL</label>
+          <input id="editor-target-url" type="text" readonly />
+        </div>
+        <div class="field">
+          <label for="editor-relation-type">Relationship type</label>
+          <input id="editor-relation-type" type="text" />
+        </div>
+        <div class="field">
+          <label for="editor-note">Note</label>
+          <textarea id="editor-note"></textarea>
+        </div>
+        <div class="field">
+          <label for="editor-origin">Origin</label>
+          <select id="editor-origin">
+            <option value="preset">preset</option>
+            <option value="custom">custom</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button class="primary" id="save-edge" type="button">Save changes</button>
+          <button class="secondary" id="cancel-edit" type="button">Cancel</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Cypher export</h2>
+        <textarea id="cypher-output" readonly></textarea>
+        <div class="actions">
+          <button class="primary" id="copy-cypher" type="button">Copy Cypher</button>
+          <button class="secondary" id="refresh-view" type="button">Refresh</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="src/shared.js"></script>
+    <script src="src/popup.js"></script>
+  </body>
+</html>

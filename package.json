@@ -1,0 +1,10 @@
+{
+  "name": "rcgraph",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Firefox extension for annotating relationships between tools in a research catalogue.",
+  "type": "module",
+  "scripts": {
+    "neo4j:start": "bash scripts/start-neo4j.sh"
+  }
+}
