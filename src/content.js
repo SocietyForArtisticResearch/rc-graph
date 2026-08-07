@@ -10,25 +10,22 @@ function installStyles() {
   const style = document.createElement("style");
   style.textContent = `
     .rcgraph-tool-ready {
+      outline: none;
+      cursor: default;
+    }
+
+    html.rcgraph-overlay-active .rcgraph-tool-ready {
       outline: 1px solid rgba(0, 120, 255, 0.35);
       cursor: pointer;
     }
 
-    .rcgraph-tool-ready:hover {
+    html.rcgraph-overlay-active .rcgraph-tool-ready:hover {
       outline-color: rgba(0, 120, 255, 0.9);
     }
 
     .rcgraph-tool-selected {
-      outline: 2px solid #0b74ff !important;
-      box-shadow: 0 0 0 3px rgba(11, 116, 255, 0.18);
-    }
-
-    html.rcgraph-pass-through .rcgraph-tool-ready,
-    html.rcgraph-pass-through .rcgraph-tool-ready:hover,
-    html.rcgraph-pass-through .rcgraph-tool-selected {
       outline: none !important;
       box-shadow: none !important;
-      cursor: default !important;
     }
 
     #rcgraph-status {
@@ -162,8 +159,8 @@ function setSelectedTool(element) {
   element.classList.add("rcgraph-tool-selected");
 }
 
-function setPassThroughMode(enabled) {
-  document.documentElement.classList.toggle("rcgraph-pass-through", enabled);
+function setOverlayMode(enabled) {
+  document.documentElement.classList.toggle("rcgraph-overlay-active", enabled);
 }
 
 function removeRelationDialog() {
@@ -311,8 +308,7 @@ function handleToolClickCapture(event) {
     return;
   }
 
-  if (event.shiftKey) {
-    setPassThroughMode(true);
+  if (!event.shiftKey) {
     return;
   }
 
@@ -324,7 +320,7 @@ function handleToolClickCapture(event) {
 
 function handlePassThroughKeyMode(event) {
   if (event.key === "Shift") {
-    setPassThroughMode(event.type === "keydown");
+    setOverlayMode(event.type === "keydown");
   }
 }
 
