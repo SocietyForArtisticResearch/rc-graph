@@ -6,7 +6,7 @@ async function loadGraphState() {
 }
 
 async function saveGraphState(graphState) {
-  await browser.storage.local.set({ graphState });
+  await browser.storage.local.set({ graphState: ensureCanonicalGraphState(graphState) });
 }
 
 function withPendingSelection(graphState, pendingSelection) {
@@ -34,8 +34,30 @@ browser.runtime.onMessage.addListener(async (message) => {
     return saveGraphState(message.graphState);
   }
 
+  if (message?.type === "graph:set-extension-enabled") {
+    const graphState = ensureGraphState(await loadGraphState());
+    const extensionEnabled = message.enabled !== false;
+
+    const nextState = {
+      ...graphState,
+      extensionEnabled,
+      status: extensionEnabled ? "extension-enabled" : "extension-disabled"
+    };
+
+    await saveGraphState(nextState);
+    return nextState;
+  }
+
   if (message?.type === "graph:select-tool") {
     const graphState = ensureGraphState(await loadGraphState());
+
+    if (graphState.extensionEnabled === false) {
+      return {
+        ...graphState,
+        status: "extension-disabled"
+      };
+    }
+
     const node = message.node;
     const existingPendingSelection = graphState.pendingSelection;
 
@@ -72,6 +94,14 @@ browser.runtime.onMessage.addListener(async (message) => {
 
   if (message?.type === "graph:complete-edge") {
     const graphState = ensureGraphState(await loadGraphState());
+
+    if (graphState.extensionEnabled === false) {
+      return {
+        ...graphState,
+        status: "extension-disabled"
+      };
+    }
+
     const source = graphState.pendingSelection;
     const target = message.targetNode;
     const relationType = String(message.relationType || "").trim();

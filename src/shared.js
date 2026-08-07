@@ -196,7 +196,8 @@ function createGraphState() {
     nodes: [],
     edges: [],
     pendingSelection: null,
-    relationPresets: [...DEFAULT_RELATION_PRESETS]
+    relationPresets: [...DEFAULT_RELATION_PRESETS],
+    extensionEnabled: true
   };
 }
 
@@ -279,6 +280,7 @@ function buildCypherExport(graphState) {
       `MERGE (source)-[r:${relationType}]->(target)`,
       `SET r += { ${properties} };`
     ].join(" ");
+    normalizedState.extensionEnabled = graphState.extensionEnabled !== false;
   });
 
   return [

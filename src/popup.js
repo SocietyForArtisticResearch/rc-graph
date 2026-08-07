@@ -2,6 +2,13 @@ async function loadGraphStateFromBackground() {
   return browser.runtime.sendMessage({ type: "graph:get" });
 }
 
+async function setExtensionEnabled(enabled) {
+  return browser.runtime.sendMessage({
+    type: "graph:set-extension-enabled",
+    enabled
+  });
+}
+
 let currentEditEdgeId = null;
 
 function groupEdgesByRelationType(edges) {
@@ -82,10 +89,21 @@ async function renderPopup() {
   const state = await loadGraphStateFromBackground();
   const nodesByKey = new Map((state.nodes || []).map((node) => [node.key, node]));
   const cypher = buildCypherExport(state);
+  const extensionEnabled = state.extensionEnabled !== false;
 
   document.getElementById("node-count").textContent = String(state.nodes?.length || 0);
   document.getElementById("edge-count").textContent = String(state.edges?.length || 0);
   document.getElementById("pending-count").textContent = state.pendingSelection ? "1" : "0";
+
+  const extensionToggle = document.getElementById("extension-enabled-toggle");
+  const toggleTitle = document.getElementById("toggle-title");
+  const toggleDescription = document.getElementById("toggle-description");
+
+  extensionToggle.checked = extensionEnabled;
+  toggleTitle.textContent = extensionEnabled ? "Extension enabled" : "Extension disabled";
+  toggleDescription.textContent = extensionEnabled
+    ? "Hold Shift to show the overlay and select tools."
+    : "Enable the extension to select tools and add relationships.";
 
   const edgeList = document.getElementById("edge-list");
   if (!state.edges || state.edges.length === 0) {
@@ -209,5 +227,10 @@ document.getElementById("copy-cypher").addEventListener("click", copyCypher);
 document.getElementById("refresh-view").addEventListener("click", renderPopup);
 document.getElementById("save-edge").addEventListener("click", saveEditorChanges);
 document.getElementById("cancel-edit").addEventListener("click", closeEditor);
+
+document.getElementById("extension-enabled-toggle").addEventListener("change", async (event) => {
+  await setExtensionEnabled(event.target.checked);
+  await renderPopup();
+});
 
 renderPopup();

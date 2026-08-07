@@ -6,6 +6,9 @@ async function loadGraphStateFromBackground() {
   return browser.runtime.sendMessage({ type: "graph:get" });
 }
 
+let extensionEnabled = true;
+let shiftKeyPressed = false;
+
 function installStyles() {
   const style = document.createElement("style");
   style.textContent = `
@@ -163,6 +166,26 @@ function setOverlayMode(enabled) {
   document.documentElement.classList.toggle("rcgraph-overlay-active", enabled);
 }
 
+function syncOverlayState() {
+  setOverlayMode(extensionEnabled && shiftKeyPressed);
+}
+
+function applyExtensionState(state) {
+  extensionEnabled = state.extensionEnabled !== false;
+
+  if (!extensionEnabled) {
+    removeRelationDialog();
+  }
+
+  syncOverlayState();
+
+  if (extensionEnabled) {
+    setStatus(`rcGraph ready: ${getToolCandidates().length} tools detected.`);
+  } else {
+    setStatus("rcGraph disabled.");
+  }
+}
+
 function removeRelationDialog() {
   document.getElementById("rcgraph-relation-backdrop")?.remove();
 }
@@ -273,6 +296,10 @@ async function completeEdge(targetNode) {
 }
 
 async function handleToolClick(tool) {
+  if (!extensionEnabled) {
+    return;
+  }
+
   const node = readToolNodeFromElement(tool);
 
   const response = await browser.runtime.sendMessage({
@@ -308,7 +335,7 @@ function handleToolClickCapture(event) {
     return;
   }
 
-  if (!event.shiftKey) {
+  if (!extensionEnabled || !event.shiftKey) {
     return;
   }
 
@@ -320,9 +347,23 @@ function handleToolClickCapture(event) {
 
 function handlePassThroughKeyMode(event) {
   if (event.key === "Shift") {
-    setOverlayMode(event.type === "keydown");
+    shiftKeyPressed = event.type === "keydown";
+    syncOverlayState();
   }
 }
+
+async function refreshExtensionState() {
+  const state = await loadGraphStateFromBackground();
+  applyExtensionState(state);
+}
+
+browser.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== "local" || !changes.graphState) {
+    return;
+  }
+
+  applyExtensionState(changes.graphState.newValue || {});
+});
 
 function annotateTools() {
   const tools = getToolCandidates();
@@ -343,8 +384,10 @@ function annotateTools() {
     window.addEventListener("keyup", handlePassThroughKeyMode, true);
   }
 
-  setStatus(`rcGraph ready: ${tools.length} tools detected.`);
+  syncOverlayState();
 }
 
 installStyles();
-annotateTools();
+refreshExtensionState().then(() => {
+  annotateTools();
+});

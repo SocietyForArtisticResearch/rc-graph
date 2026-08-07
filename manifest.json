@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "rcGraph",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Annotate relationships between tools in a research catalogue and export to Neo4j.",
   "permissions": ["storage", "activeTab", "<all_urls>"],
   "background": {
@@ -20,7 +20,11 @@
   ],
   "browser_specific_settings": {
     "gecko": {
-      "id": "rcgraph@example.com"
+      "id": "rcgraph@example.com",
+      "data_collection_permissions": {
+        "collect": false,
+        "required": ["none"]
+      }
     }
   }
 }
